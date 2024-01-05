@@ -1,0 +1,8 @@
+poetry.lock
+pyproject.toml
+secret.json
+.replit
+replit.nix
+.local/
+.pythonlibs/
+.upm/
