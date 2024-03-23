@@ -3,13 +3,13 @@ from discord.ext import commands
 import requests
 from classes import Ext
 import json
-
-with open("secret.json", "r", encoding="utf-8") as f:
-    apikey = json.load(f)["taiwanweatherapi"]
+import os
+from dotenv import load_dotenv
+load_dotenv
 
 class Weather(Ext):
     def __init__(self, bot):
-        self.apikey = apikey
+        self.apikey = os.getenv('WEATHERAPI')
         self.params={"Authorization":self.apikey,"format":"JSON"}
 
     @commands.group()

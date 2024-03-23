@@ -8,3 +8,4 @@ replit.nix
 .pythonlibs/
 .upm/
 test.py
+.env

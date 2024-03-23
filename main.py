@@ -3,9 +3,9 @@ from discord.ext import commands
 import os
 import asyncio
 import json
+from dotenv import load_dotenv
+load_dotenv()
 
-with open("secret.json", mode="r", encoding="utf8") as f:
-    secret = json.load(f)
 bot = commands.Bot(command_prefix='>',intents = discord.Intents.all())
 
 @bot.event
@@ -32,6 +32,6 @@ async def loadext():
 
 async def main():
     await loadext()
-    await bot.start(secret["token"])
+    await bot.start(os.getenv('TOKEN'))
 
 asyncio.run(main())
