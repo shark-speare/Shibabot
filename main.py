@@ -11,6 +11,11 @@ bot = commands.Bot(command_prefix='>',intents = discord.Intents.all())
 @bot.event
 async def on_ready():
     print(f"Logged in as {bot.user}")
+    try:
+        synced = await bot.tree.sync()
+        print(f"Sync {len(synced)} commands: {synced}")
+    except Exception as e:
+        print(e)
 
 @bot.command()
 async def load(ctx,ext):
