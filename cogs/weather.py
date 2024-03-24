@@ -76,6 +76,7 @@ class Weather(commands.GroupCog):
             dataset = data[index]["weatherElement"]
         else:
             await interaction.response.send_message("查無資料，十分抱歉")
+            return 0
         
 
 
