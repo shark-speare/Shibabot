@@ -59,6 +59,8 @@ class Weather(commands.GroupCog):
     @app_commands.describe(城市="資料由氣象局提供，沒有就是沒有")
     async def world(self,interaction: discord.Interaction,城市:str):
         
+        await interaction.response.defer(ephemeral=True)
+
         # 引入資料集
         url = "https://opendata.cwa.gov.tw/fileapi/v1/opendataapi/F-C0032-007"
         data = requests.get(url=url, params=self.params).json()["cwaopendata"]["dataset"]["location"]
