@@ -59,7 +59,7 @@ class Weather(commands.GroupCog):
     @app_commands.describe(城市="資料由氣象局提供，沒有就是沒有")
     async def world(self,interaction: discord.Interaction,城市:str):
         
-        await interaction.response.defer(ephemeral=True)
+        await interaction.response.defer(ephemeral=False)
 
         # 引入資料集
         url = "https://opendata.cwa.gov.tw/fileapi/v1/opendataapi/F-C0032-007"
@@ -77,7 +77,7 @@ class Weather(commands.GroupCog):
         if not index == -1:
             dataset = data[index]["weatherElement"]
         else:
-            await interaction.response.send_message("查無資料，十分抱歉")
+            await interaction.followup.send("查無資料，十分抱歉")
             return 0
         
 
@@ -103,7 +103,7 @@ class Weather(commands.GroupCog):
         
         final = "\n".join(finallist)
 
-        await interaction.response.send_message(final)
+        await interaction.followup.send(final)
       
 
 async def setup(bot):
