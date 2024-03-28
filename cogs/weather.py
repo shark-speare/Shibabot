@@ -6,6 +6,7 @@ import requests
 from dotenv import load_dotenv
 import os
 from typing import Optional
+from datetime import datetime
 load_dotenv()
 
 class Weather(commands.GroupCog):
@@ -14,46 +15,75 @@ class Weather(commands.GroupCog):
         self.apikey = os.environ['WEATHERAPI']
         self.params={"Authorization":self.apikey,"format":"JSON"}
 
+    #提取日期
+    def exdate(self,dictionary:dict):
+        date:datetime = datetime.fromisocalendar(dictionary['startTime'])
+        week = {
+            0:"一",
+            1:"二",
+            2:"三",
+            3:"四",
+            4:"五",
+            5:"六",
+            6:"日",
+        }
+        return date.strftime(f"%m/%d({week[date.weekday()]})")
+    
+    #提取內容
+    def excontent(self,dictionary:dict): 
+        return dictionary["parameter"]["parameterName"]
+    
+
     @app_commands.command(name="local",description="臺灣各縣市每3小時天氣預報")
     @app_commands.choices(縣市=[
-        Choice(name="臺北市",value="臺北市"),
-        Choice(name="新北市",value="新北市"),
-        Choice(name="桃園市",value="桃園市"),
-        Choice(name="新竹縣",value="新竹縣"),
-        Choice(name="苗栗縣",value="苗栗縣"),
-        Choice(name="臺中市",value="臺中市"),
-        Choice(name="彰化縣",value="彰化縣"),
-        Choice(name="雲林縣",value="雲林縣"),
-        Choice(name="嘉義縣",value="嘉義縣"),
-        Choice(name="台南市",value="台南市"),
-        Choice(name="高雄市",value="高雄市"),
-        Choice(name="屏東縣",value="屏東縣"),
-        Choice(name="臺東縣",value="臺東縣"),
-        Choice(name="花蓮縣",value="花蓮縣"),
-        Choice(name="宜蘭縣",value="宜蘭縣"),
-        Choice(name="南投縣",value="南投縣"),
-        Choice(name="澎湖縣",value="澎湖縣"),
-        Choice(name="金門縣",value="金門縣"),
-        Choice(name="連江縣",value="連江縣")
+        Choice(name="臺北市",value="0"),
+        Choice(name="新北市",value="1"),
+        Choice(name="桃園市",value="2"),
+        Choice(name="新竹縣",value="3"),
+        Choice(name="臺南市",value="4"),
+        Choice(name="高雄市",value="5"),
+        Choice(name="基隆市",value="6"),
+        Choice(name="新竹縣",value="7"),
+        Choice(name="新竹市",value="8"),
+        Choice(name="苗栗縣",value="9"),
+        Choice(name="彰化縣",value="10"),
+        Choice(name="南投縣",value="11"),
+        Choice(name="雲林縣",value="12"),
+        Choice(name="嘉義縣",value="13"),
+        Choice(name="嘉義市",value="14"),
+        Choice(name="屏東縣",value="15"),
+        Choice(name="宜蘭縣",value="16"),
+        Choice(name="花蓮縣",value="17"),
+        Choice(name="臺東縣",value="18"),
+        Choice(name="澎湖縣",value="19"),
+        Choice(name="金門縣",value="20"),
+        Choice(name="連江縣",value="21"),
     ])
-    @app_commands.describe(小時="起算小時，填1為0~3，填5為4~6以此類推")
-    async def weather(self,interaction: discord.Interaction,縣市:Choice[str],小時:Optional[int]=0):
-        
-        url = "https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-D0047-089"
+    async def weather(self,interaction: discord.Interaction,縣市:Choice[str]):
+        await interaction.response.defer()
+
+        url = "https://opendata.cwa.gov.tw/fileapi/v1/opendataapi/F-C0032-005"
         params = self.params
-        params["locationName"] = 縣市.value
+        locationindex = int(縣市.value)
         
-        if 小時 <= 96:
-            index = 小時 // 3
-            # 取得資料集
-            dataset = requests.get(url=url, params=params).json()["records"]["locations"][0]["location"][0]["weatherElement"][6]["time"]
+        
+        data = requests.get(url=url,params=params).json()['cwaopendata']['dataset']['location'][locationindex]['weatherElement']
+        embed = discord.Embed(title="未來一周天氣預報")
 
-            value = dataset[index]["elementValue"][0]["value"]
-
-            await interaction.response.send_message(f"{縣市.value}近{3*index}~{3*(index+1)}小時預報:\n{value}")
-
+        # for i in range(0,14,2):
+        #     date = self.exdate(data[0]['time'][i])
+        #     wx = self.excontent(data[0]['time'][i])
+        #     maxt = self.excontent(data[1]['time'][i])
+        #     mint = self.excontent(data[2]['time'][i])
+            
+        #     embed.add_field(name=date,value=f"{wx}\n{mint}-{maxt}°C")
+        # date = self.exdate(data[0]['time'][0])
+        # await embed.add_field(name=date,value="測試")
+        
+        if isinstance(data,list):
+            await interaction.followup.send("succeed")
         else:
-            await interaction.response.send_message("最多提供96小時的資料，資料序需小於32")
+            await interaction.followup.send("failed")
 
     @app_commands.command(name="world",description="世界各大城市三日天氣預報")
     @app_commands.describe(城市="資料由氣象局提供，沒有就是沒有")
