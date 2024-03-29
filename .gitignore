@@ -11,3 +11,5 @@ test.py
 .env
 tempCodeRunnerFile.py
 test.py
+.vscode/
+.code-workspace
