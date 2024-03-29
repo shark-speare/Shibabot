@@ -6,7 +6,7 @@ import requests
 from dotenv import load_dotenv
 import os
 from typing import Optional
-from datetime import datetime
+from datetime import datetime as d
 load_dotenv()
 
 class Weather(commands.GroupCog):
@@ -66,24 +66,58 @@ class Weather(commands.GroupCog):
         params = self.params
         locationindex = int(縣市.value)
         
-        
+        #取得資料與建立嵌入物件
         data = requests.get(url=url,params=params).json()['cwaopendata']['dataset']['location'][locationindex]['weatherElement']
-        embed = discord.Embed(title="未來一周天氣預報")
-
-        # for i in range(0,14,2):
-        #     date = self.exdate(data[0]['time'][i])
-        #     wx = self.excontent(data[0]['time'][i])
-        #     maxt = self.excontent(data[1]['time'][i])
-        #     mint = self.excontent(data[2]['time'][i])
-            
-        #     embed.add_field(name=date,value=f"{wx}\n{mint}-{maxt}°C")
-        # date = self.exdate(data[0]['time'][0])
-        # await embed.add_field(name=date,value="測試")
+        embed = discord.Embed(title=f"{縣市.name}未來一周天氣預報",color=discord.Colour.blue())
         
-        if isinstance(data,list):
-            await interaction.followup.send("succeed")
-        else:
-            await interaction.followup.send("failed")
+
+        #數字與日期對應表
+        week = {
+            0:"一",
+            1:"二",
+            2:"三",
+            3:"四",
+            4:"五",
+            5:"六",
+            6:"日",
+        }
+
+        #加入嵌入區塊
+        for i in range(0,13,2):
+
+            date = d.fromisoformat(data[0]['time'][i]['startTime'])
+            date = date.strftime(f"%m/%d({week[date.weekday()]})")
+            
+            wx = data[0]['time'][i]['parameter']['parameterName']
+            wxvalue = int(data[0]['time'][i]['parameter']['parameterValue'])
+            maxt = data[1]['time'][i]['parameter']['parameterName']
+            mint = data[2]['time'][i]['parameter']['parameterName']
+
+            if wxvalue == 1:
+               weatheremoji = ":sunny:"
+            elif 2 <= wxvalue <= 3:
+               weatheremoji = ":white_sun_small_cloud:"
+            elif 4 <= wxvalue <= 7:
+               weatheremoji = ":white_sun_cloud:"
+            elif 8 <= wxvalue <= 10:
+               weatheremoji = ":white_sun_rain_cloud:"
+            else:
+               weatheremoji = ":cloud_rain:"
+
+            # if int(maxt) <= 10:
+            #     tempemoji = ":snowflake:"
+            # elif int(maxt) <= 25:
+            #     tempemoji = ":wind_chime:"
+            # else:
+            #     tempemoji = ":thermometer:"
+
+    
+            embed.add_field(name=date,value=f"{weatheremoji}{wx}\n{mint}-{maxt}°C")
+
+        try:
+            await interaction.followup.send(embed = embed)
+        except Exception as e:
+            await interaction.followup.send(str(e))
 
     @app_commands.command(name="world",description="世界各大城市三日天氣預報")
     @app_commands.describe(城市="資料由氣象局提供，沒有就是沒有")
