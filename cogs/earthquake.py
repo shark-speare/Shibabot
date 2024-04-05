@@ -74,6 +74,69 @@ class Earthquake(commands.GroupCog):
             embeds.append(embed)
         
             await interaction.followup.send(embeds=embeds)
+        
+        
+    @tasks.loop()
+    async def fetch(self):
+        current = os.path.dirname(__file__)
+        db_path = os.path.join(current,"..","database","earthquake.db")
+
+        con = sqlite3.connect(db_path)
+        cur = con.cursor()
+
+        params = self.params
+        data = requests.get(url=self.url,params=self.params).json()['records']["Earthquake"][0]
+
+        if data['EarthquakeNo'] == self.number:
+            return 0
+        else:
+
+            image = data["ReportImageURI"]
+            url = data["Web"]
+            info = data["EarthquakeInfo"]
+
+            dateandtime = datetime.fromisoformat(info["OriginTime"])
+            date = dateandtime.strftime("%Y/%m/%d")
+            time = dateandtime.strftime("%X")
+            depth = info["FocalDepth"]
+            location = info["Epicenter"]["Location"]
+            magnitude = info["EarthquakeMagnitude"]["MagnitudeValue"]
+            
+            if data["ReportColor"] == "綠色":
+                color = discord.Color.green()
+            elif data["ReportColor"] == "黃色":
+                color = discord.Color.yellow()
+            elif data["ReportColor"] == "橘色":
+                color = discord.Color.orange()
+            else:
+                color = discord.Color.red()
+            
+            embed = discord.Embed(
+                title="**地震報告**",
+                color=color,
+                description=url
+                )
+                    
+            embed.add_field(name="時間",value=f"{date}\n{time}",inline=True)
+            embed.add_field(name="震央",value=location,inline=False)
+            embed.add_field(name="震源深度",value=f"{depth}公里",inline=True)
+            embed.add_field(name="芮氏規模",value=magnitude,inline=True)
+            embed.set_image(url=image)
+            embed.timestamp = dateandtime
+        
+            cur.execute("SELECT id WHERE enable = 1")
+            channels = cur.fetchall()
+            cur.close()
+            con.close()
+
+            for id in channels:
+                channel = self.bot.get_channel(id)
+                await channel.send(embed=embed)
+
+            self.number = data['EarthquakeNo']
+
+    
+    
 
 async def setup(bot):
     await bot.add_cog(Earthquake(bot))
