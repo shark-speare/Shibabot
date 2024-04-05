@@ -1,0 +1,5 @@
+datetime
+discord.py
+requests
+genshin.py
+dotenv

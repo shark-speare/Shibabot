@@ -15,25 +15,6 @@ class Weather(commands.GroupCog):
         self.apikey = os.environ['WEATHERAPI']
         self.params={"Authorization":self.apikey,"format":"JSON"}
 
-    #提取日期
-    def exdate(self,dictionary:dict):
-        date:datetime = datetime.fromisocalendar(dictionary['startTime'])
-        week = {
-            0:"一",
-            1:"二",
-            2:"三",
-            3:"四",
-            4:"五",
-            5:"六",
-            6:"日",
-        }
-        return date.strftime(f"%m/%d({week[date.weekday()]})")
-    
-    #提取內容
-    def excontent(self,dictionary:dict): 
-        return dictionary["parameter"]["parameterName"]
-    
-
     @app_commands.command(name="local",description="臺灣各縣市每3小時天氣預報")
     @app_commands.choices(縣市=[
         Choice(name="臺北市",value="0"),

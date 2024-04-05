@@ -35,6 +35,10 @@ async def loadext():
             await bot.load_extension(f'cogs.{filename[:-3]}')
             print(f"{filename[:-3]} loaded.")
 
+@bot.command()
+async def clear(ctx:commands.Context,count:int):
+    await ctx.channel.purge(limit=int(count)+1)
+
 async def main():
     await loadext()
     await bot.start(os.getenv('TOKEN'))
