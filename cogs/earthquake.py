@@ -16,6 +16,10 @@ class Earthquake(commands.GroupCog):
         self.url = "https://opendata.cwa.gov.tw/api/v1/rest/datastore/E-A0015-001"
         self.params = {"Authorization":self.apikey,"limit":"1"}
         self.number = 0
+
+    @commands.GroupCog.listener()
+    async def on_ready(self):
+        self.fetch.start()
     
     @app_commands.command(name="query",description="查詢近期地震警示")
     @app_commands.describe(回傳資料筆數="最大可請求數量為10")
@@ -76,17 +80,12 @@ class Earthquake(commands.GroupCog):
             await interaction.followup.send(embeds=embeds)
         
         
-    @tasks.loop()
+    @tasks.loop(seconds=30)
     async def fetch(self):
-        current = os.path.dirname(__file__)
-        db_path = os.path.join(current,"..","database","earthquake.db")
-
-        con = sqlite3.connect(db_path)
-        cur = con.cursor()
 
         params = self.params
         data = requests.get(url=self.url,params=self.params).json()['records']["Earthquake"][0]
-
+        
         if data['EarthquakeNo'] == self.number:
             return 0
         else:
@@ -123,14 +122,20 @@ class Earthquake(commands.GroupCog):
             embed.add_field(name="芮氏規模",value=magnitude,inline=True)
             embed.set_image(url=image)
             embed.timestamp = dateandtime
-        
-            cur.execute("SELECT id WHERE enable = 1")
+
+
+            current = os.path.dirname(__file__)
+            db_path = os.path.join(current,"..","database","earthquake.db")
+            con = sqlite3.connect(db_path)
+            cur = con.cursor()
+
+            cur.execute("SELECT id FROM channel WHERE enable = 1")
             channels = cur.fetchall()
             cur.close()
             con.close()
 
             for id in channels:
-                channel = self.bot.get_channel(id)
+                channel = self.bot.get_channel(id[0])
                 await channel.send(embed=embed)
 
             self.number = data['EarthquakeNo']
