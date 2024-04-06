@@ -13,7 +13,6 @@ async def on_ready():
     print(f"Logged in as {bot.user}")
     try:
         synced = await bot.tree.sync()
-        print(f"Sync {len(synced)} commands: {synced}")
     except Exception as e:
         print(e)
 
