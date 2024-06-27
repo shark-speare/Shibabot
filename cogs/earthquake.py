@@ -96,64 +96,79 @@ class Earthquake(commands.GroupCog):
     #開始重複
     @commands.GroupCog.listener()
     async def on_ready(self):
-        self.auto.start()
+        await self.auto.start()
     
     #手動請求
-    @app_commands.command(name="query",description="查詢近期顯著有感地震報告")
+    @app_commands.command(name="query",description="查詢近期有感地震報告")
     @app_commands.describe(回傳資料筆數="最大可請求數量為10")
-    async def query(self,interaction: discord.Interaction,回傳資料筆數: Optional[int]):
+    @app_commands.choices(地震分類=[
+        Choice(name="顯著有感地震",value="all"),
+        Choice(name="區域有感地震",value="local")
+    ]
+    )
+    async def query(self,interaction: discord.Interaction,地震分類: Choice[str],回傳資料筆數: Optional[int] = 1):
         
         await interaction.response.defer()
-        params = self.params
-        
-        #確保傳入限制的數字大小正確
-        if 回傳資料筆數 and 1<=回傳資料筆數<=10:
-            params['limit'] = 回傳資料筆數
-        elif 回傳資料筆數 and 回傳資料筆數>10:
-            await interaction.followup.send("資料數不得>10或<1")
-            return 0
-        else:
-            回傳資料筆數 = 1
-        
+        try:
+            #確保傳入限制的數字大小正確
+            if 1<=回傳資料筆數<=10:
+                pass
+            else:
+                await interaction.followup.send("資料數不得>10或<1")
+                return 0
 
-        embeds = await self.fetch("all",回傳資料筆數,0)
-        
-        await interaction.followup.send(embeds=embeds)
-        
-    #自動傳送所有地震報告 
-    @tasks.loop(seconds=30)
+            
+            result = await self.fetch(地震分類.value,回傳資料筆數,0)
+            if isinstance(result,discord.Embed):
+                await interaction.followup.send(embed=result)
+            else:
+                await interaction.followup.send(embeds=result)
+
+        except Exception as e:
+            print(e)
+    
+    #設定警示開關
+    # @app_commands.command(name="report",description="特定頻道地震報告開關")
+    # async def report(self,interaction: discord.Interaction, 頻道ID: int):
+    #     current = os.path.dirname(__file__)
+    #     path = os.path.join(current,'..','database','earthquake.db')
+    #     con = sqlite3.connect(path)
+    #     cur = con.cursor()
+
+    #     cur.execute()
+
+
+    #自動傳送所有地震報告
+    @tasks.loop(seconds=10)
     async def auto(self):
-        
-        current = os.path.dirname(__file__)
-        path = os.path.join(current,"..","database","earthquake.db")
-        con = sqlite3.connect(path)
-        cur = con.cursor()
+        try:
+            current = os.path.dirname(__file__)
+            path = os.path.join(current,"..","database","earthquake.db")
+            con = sqlite3.connect(path)
+            cur = con.cursor()
 
-        embed1 = await self.fetch('all',1,1)
-        if isinstance(embed1,discord.Embed):
-            cur.execute("SELECT id FROM channel WHERE enable = 1")
-            channels = cur.fetchall()
+            embed1 = await self.fetch('all',1,1)
+            if isinstance(embed1,discord.Embed):
+                cur.execute("SELECT id FROM channel WHERE enable = 1")
+                channels = cur.fetchall()
+                            
+                for id in channels:
+                    channel = self.bot.get_channel(id[0])
+                    await channel.send(embed=embed1)
             
+            embed2 = await self.fetch('local',1,1)
+            if isinstance(embed2,discord.Embed):
+                cur.execute("SELECT id FROM channel WHERE enable = 1")
+                channels = cur.fetchall()
 
-            print(channels)
-            
-            for id in channels:
-                channel = self.bot.get_channel(id[0])
-                await channel.send(embed=embed1)
-        
-        embed2 = await self.fetch('local',1,1)
-        if isinstance(embed2,discord.Embed):
-            cur.execute("SELECT id FROM channel WHERE enable = 1")
-            channels = cur.fetchall()
+                for id in channels:
+                    channel = self.bot.get_channel(id[0])
+                    await channel.send(embed=embed2)
+
             cur.close()
             con.close()
-
-            for id in channels:
-                channel = self.bot.get_channel(id[0])
-                await channel.send(embed=embed2)
-
-        cur.close()
-        con.close()
+        except Exception as e:
+            print(e)
 
             
 
